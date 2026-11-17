@@ -1,0 +1,29 @@
+ACTUALIZACIÓN PRESCOTT CLUB
+
+ESTE ZIP SÍ INCLUYE LA FOTO DE LOS CINCO CHICOS:
+assets/historia-golf-cinco.jpeg
+
+ARCHIVOS:
+- historia.html: reemplaza el archivo historia.html de la raíz del repositorio.
+- colecciones.html: reemplaza colecciones.html.
+- tienda.html: reemplaza tienda.html.
+- app.js: reemplaza app.js.
+- styles-adicional.css.txt: copia su contenido y pégalo AL FINAL de styles.css; no reemplaces styles.css completo.
+- assets/historia-golf-cinco.jpeg: súbelo a la carpeta assets que ya existe.
+
+IMPORTANTE:
+La foto de dos personas `prescott-golf-dos-personas.jpeg` se queda en Inicio. No la sustituyas.
+La foto de los cinco chicos incluida aquí se usa solo en Historia.
+La camisa de Colecciones usa `assets/sienna-gris-oscuro.jpeg`.
+El emblema usa `assets/venado-logo.jpeg`.
+
+SUBIDA:
+1. En GitHub abre cada archivo existente y pulsa el lápiz.
+2. Selecciona todo el contenido, pega el contenido del archivo nuevo y confirma cambios.
+3. Para styles.css, pega el contenido de styles-adicional.css.txt al final del archivo actual.
+4. Entra en assets y sube `historia-golf-cinco.jpeg`.
+5. No borres index.html ni cambies la configuración de GitHub Pages.
+
+PEDIDOS POR CORREO:
+El app.js incluido prepara el pedido mediante mailto, que abre el correo del comprador pero requiere que este pulse Enviar. No envía automáticamente.
+Para recepción automática fiable hay que conectar un servicio de formularios o backend, por ejemplo FormSubmit, y verificar el correo.
