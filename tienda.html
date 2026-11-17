@@ -2,7 +2,100 @@
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tienda — Prescott Club</title><link rel="stylesheet" href="styles.css"><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Dancing+Script:wght@500;600;700&display=swap" rel="stylesheet"></head>
 <body><div class="side-emblems" aria-hidden="true"><img src="assets/venado-logo.jpeg" alt=""><img src="assets/venado-logo.jpeg" alt=""></div><div class="announcement">PRESCOTT CLUB · EST. 2026</div>
 <header class="site-header"><a class="brand" href="index.html">PRESCOTT CLUB<span>™</span><small>Fake it, Till you make it</small></a><button class="menu-toggle">☰</button><nav><a href="index.html">Inicio</a><a href="historia.html">Historia</a><a href="colecciones.html">Colecciones</a><a class="active" href="tienda.html">Tienda</a><a href="contacto.html">Contacto</a><a class="cart-link" href="carrito.html">Bolsa <b id="cart-count">0</b></a></nav></header>
-<main class="page-main"><section class="page-heading compact"><p class="eyebrow">SHOP PRESCOTT</p><h1>La colección.</h1><p>Selecciona tu pieza y talla.</p></section><section class="products-section">
+<main class="page-main"><section class="page-heading compact"><p class="eyebrow">SHOP PRESCOTT</p><h1>La colección.</h1><p>Selecciona tu pieza y talla.</p></section>
+<section class="products-section">
+
+<h2>Camisas</h2>
+
+<div class="product-grid">
+
+  <article class="product-card">
+    <div class="product-image">
+      <img id="sienna-image" src="assets/sienna-verde-olivo.jpeg" alt="Camisa Sienna">
+    </div>
+    <div class="product-info">
+      <div><h3>SIENNA</h3><p>Camisa de cuello abierto</p></div>
+      <strong>$60.00</strong>
+    </div>
+    <label>Color
+      <select id="sienna-color">
+        <option>Gris oscuro</option>
+        <option>Verde olivo</option>
+      </select>
+    </label>
+    <label>Talla
+      <select id="sienna-size">
+        <option>XS</option><option>S</option><option>M</option><option>L</option>
+      </select>
+    </label>
+    <button class="button add-button" data-product="SIENNA" data-color="sienna-color" data-size="sienna-size">Añadir a la bolsa</button>
+  </article>
+
+  <article class="product-card">
+    <div class="product-image">
+      <img id="milano-image" src="assets/milano-blanco.jpeg" alt="Camisa Milano">
+    </div>
+    <div class="product-info">
+      <div><h3>MILANO</h3><p>Camisa clásica con botones</p></div>
+      <strong>$60.00</strong>
+    </div>
+    <label>Color
+      <select id="milano-color">
+        <option>Blanco</option>
+        <option>Celeste</option>
+      </select>
+    </label>
+    <label>Talla
+      <select id="milano-size">
+        <option>XS</option><option>S</option><option>M</option><option>L</option>
+      </select>
+    </label>
+    <button class="button add-button" data-product="MILANO" data-color="milano-color" data-size="milano-size">Añadir a la bolsa</button>
+  </article>
+
+</div>
+
+<h2 id="camisetas">Camisetas</h2>
+
+<div class="product-grid product-grid-three">
+
+  <article class="product-card">
+    <div class="product-placeholder"></div>
+    <div class="product-info"><div><h3>CAMISETA 01</h3><p>Classic Prescott Tee</p></div><strong>$40.00</strong></div>
+    <label>Talla<select id="tee1-size"><option>XS</option><option>S</option><option>M</option><option>L</option></select></label>
+    <button class="button add-button" data-product="CAMISETA 01" data-size="tee1-size" data-price="40" data-color-value="Único">Añadir a la bolsa</button>
+  </article>
+
+  <article class="product-card">
+    <div class="product-placeholder"></div>
+    <div class="product-info"><div><h3>CAMISETA 02</h3><p>Classic Prescott Tee</p></div><strong>$40.00</strong></div>
+    <label>Talla<select id="tee2-size"><option>XS</option><option>S</option><option>M</option><option>L</option></select></label>
+    <button class="button add-button" data-product="CAMISETA 02" data-size="tee2-size" data-price="40" data-color-value="Único">Añadir a la bolsa</button>
+  </article>
+
+  <article class="product-card">
+    <div class="product-placeholder"></div>
+    <div class="product-info"><div><h3>CAMISETA 03</h3><p>Classic Prescott Tee</p></div><strong>$40.00</strong></div>
+    <label>Talla<select id="tee3-size"><option>XS</option><option>S</option><option>M</option><option>L</option></select></label>
+    <button class="button add-button" data-product="CAMISETA 03" data-size="tee3-size" data-price="40" data-color-value="Único">Añadir a la bolsa</button>
+  </article>
+
+</div>
+
+<h2 id="pantalones">Pantalones</h2>
+
+<div class="product-grid">
+  <article class="product-card">
+    <div class="product-placeholder"></div>
+    <div class="product-info"><div><h3>PANTALÓN BEIGE</h3><p>Corte clásico</p></div><strong>$60.00</strong></div>
+    <p class="product-color-note">Color: Beige</p>
+    <label>Talla<select id="pants-size"><option>XS</option><option>S</option><option>M</option><option>L</option></select></label>
+    <button class="button add-button" data-product="PANTALÓN BEIGE" data-size="pants-size" data-price="60" data-color-value="Beige">Añadir a la bolsa</button>
+  </article>
+</div>
+
+</section>
+
 <h2 id="camisetas">Camisetas</h2><div class="product-grid product-grid-three">
 <article class="product-card"><div class="product-placeholder"></div><div class="product-info"><div><h3>CAMISETA 01</h3><p>Classic Prescott Tee</p></div><strong>$40.00</strong></div><label>Talla<select id="tee1-size"><option>XS</option><option>S</option><option>M</option><option>L</option></select></label><button class="button add-button" data-product="CAMISETA 01" data-size="tee1-size" data-price="40" data-color-value="Único">Añadir a la bolsa</button></article>
 <article class="product-card"><div class="product-placeholder"></div><div class="product-info"><div><h3>CAMISETA 02</h3><p>Classic Prescott Tee</p></div><strong>$40.00</strong></div><label>Talla<select id="tee2-size"><option>XS</option><option>S</option><option>M</option><option>L</option></select></label><button class="button add-button" data-product="CAMISETA 02" data-size="tee2-size" data-price="40" data-color-value="Único">Añadir a la bolsa</button></article>
