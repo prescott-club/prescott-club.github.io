@@ -78,3 +78,17 @@
     height: 330px;
   }
 }
+
+/* Fondo uniforme para las fotos de las camisas */
+.product-image {
+  background: #d4d4ce !important;
+  overflow: hidden;
+}
+
+.product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  mix-blend-mode: multiply;
+}
