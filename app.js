@@ -17,7 +17,7 @@ if (form) {
     const cart = readCart();
 
     if (!cart.length) {
-      alert("Tu bolsa está vacía.");
+      alert("Tu carrito está vacío.");
       return;
     }
 
@@ -78,7 +78,7 @@ if (form) {
     }
   });
 }
-
+ 
 
 const siennaColor = document.getElementById("sienna-color");
 const siennaImage = document.getElementById("sienna-image");
