@@ -84,9 +84,17 @@ function showSection(id) {
 }
 
 async function checkAdmin() {
-  const { data: { user } } = await sb.auth.getUser();
+  const { data: { user }, error: authError } = await sb.auth.getUser();
 
-  if (!user) return;
+  if (authError) {
+    message.textContent = "Error de sesión: " + authError.message;
+    return;
+  }
+
+  if (!user) {
+    message.textContent = "No hay sesión iniciada.";
+    return;
+  }
 
   const { data, error } = await sb
     .from("admin_users")
@@ -94,9 +102,13 @@ async function checkAdmin() {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (error || !data) {
-    await sb.auth.signOut();
-    message.textContent = "No tienes autorización para acceder.";
+  if (error) {
+    message.textContent = "Error verificando administrador: " + error.message;
+    return;
+  }
+
+  if (!data) {
+    message.textContent = "La cuenta no aparece como administradora.";
     return;
   }
 
