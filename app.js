@@ -61,8 +61,7 @@ async function loadShop() {
   const { data, error } = await sb
     .from("products")
     .select("*")
-    .eq("active", true)
-    .order("created_at", { ascending: true });
+    .eq("active", true);
 
   if (error) {
     container.innerHTML = "<p>No se pudo cargar la tienda.</p>";
@@ -75,24 +74,65 @@ async function loadShop() {
     return;
   }
 
+  // Orden de categorías
+  const categoryOrder = ["Camisas", "Camisetas", "Pantalones", "Accesorios", "Otros"];
+
+  data.sort((a, b) => {
+    const ai = categoryOrder.indexOf(a.category);
+    const bi = categoryOrder.indexOf(b.category);
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+  });
+
   const categories = [...new Set(data.map(p => p.category || "Otros"))];
+
+  // Imágenes específicas por color
+  function colorImage(product, color) {
+    const name = product.name.toUpperCase();
+
+    if (name === "SIENNA") {
+      if (color === "Gris oscuro")
+        return "assets/sienna-gris-oscuro.jpeg";
+
+      if (color === "Verde olivo")
+        return "assets/sienna-verde-olivo.jpeg";
+    }
+
+    if (name === "MILANO") {
+      if (color === "Blanco")
+        return "assets/milano-blanco.jpeg";
+
+      if (color === "Celeste")
+        return "assets/milano-celeste.jpeg";
+    }
+
+    return product.image_url || "";
+  }
 
   container.innerHTML = categories.map(category => {
     const products = data.filter(p => (p.category || "Otros") === category);
 
     return `
       <h2>${esc(category)}</h2>
+
       <div class="product-grid">
+
         ${products.map(p => {
           const sizes = Array.isArray(p.sizes) ? p.sizes : [];
           const colors = Array.isArray(p.colors) ? p.colors : [];
 
+          const firstColor = colors[0] || "Único";
+          const firstImage = colorImage(p, firstColor);
+
           return `
-            <article class="product-card">
+            <article class="product-card" data-product="${esc(p.name)}">
+
               <div class="product-image">
-                ${p.image_url
-                  ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}">`
-                  : `<div class="product-placeholder"></div>`
+                ${
+                  firstImage
+                    ? `<img class="product-photo"
+                        src="${esc(firstImage)}"
+                        alt="${esc(p.name)}">`
+                    : `<div class="product-placeholder"></div>`
                 }
               </div>
 
@@ -104,38 +144,56 @@ async function loadShop() {
                 <strong>${money(p.price)}</strong>
               </div>
 
-              ${colors.length ? `
-                <label>Color
-                  <select class="color-select">
-                    ${colors.map(c => `<option>${esc(c)}</option>`).join("")}
-                  </select>
-                </label>
-              ` : ""}
+              ${
+                colors.length
+                  ? `<label>Color
+                      <select class="color-select">
+                        ${colors.map(c => `<option>${esc(c)}</option>`).join("")}
+                      </select>
+                    </label>`
+                  : ""
+              }
 
-              ${sizes.length ? `
-                <label>Talla
-                  <select class="size-select">
-                    ${sizes.map(s => `<option>${esc(s)}</option>`).join("")}
-                  </select>
-                </label>
-              ` : ""}
+              ${
+                sizes.length
+                  ? `<label>Talla
+                      <select class="size-select">
+                        ${sizes.map(s => `<option>${esc(s)}</option>`).join("")}
+                      </select>
+                    </label>`
+                  : ""
+              }
 
               <button class="button dynamic-add">
                 Añadir al carrito
               </button>
+
             </article>
           `;
         }).join("")}
+
       </div>
     `;
   }).join("");
 
+  // Cambiar imagen al seleccionar color
+  container.querySelectorAll(".product-card").forEach(card => {
+    const product = data.find(p => p.name === card.dataset.product);
+    const colorSelect = card.querySelector(".color-select");
+    const image = card.querySelector(".product-photo");
+
+    if (colorSelect && image && product) {
+      colorSelect.addEventListener("change", () => {
+        image.src = colorImage(product, colorSelect.value);
+      });
+    }
+  });
+
+  // Añadir al carrito
   container.querySelectorAll(".dynamic-add").forEach(button => {
     button.addEventListener("click", () => {
       const card = button.closest(".product-card");
-      const product = data.find(p =>
-        p.name === card.querySelector("h3").textContent
-      );
+      const product = data.find(p => p.name === card.dataset.product);
 
       const color = card.querySelector(".color-select")?.value || "Único";
       const size = card.querySelector(".size-select")?.value || "Única";
