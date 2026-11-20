@@ -6,7 +6,6 @@
 <title>Prescott Club — Administración</title>
 <link rel="stylesheet" href="styles.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
 .admin-wrap{max-width:1200px;margin:auto;padding:24px 16px}
 .admin-box{max-width:420px;margin:55px auto;padding:30px;background:#f7f2e9;color:#3d2925}
@@ -17,22 +16,22 @@
 .admin-section{display:none}
 .admin-section.active{display:block}
 .admin-table{width:100%;border-collapse:collapse}
-.admin-table th,.admin-table td{padding:10px;border-bottom:1px solid #ddd;text-align:left}
+.admin-table th,.admin-table td{padding:10px;border-bottom:1px solid #ddd;text-align:left;vertical-align:top}
 .admin-table img{width:65px;height:65px;object-fit:contain;background:#eee}
 .editor{background:#fff;border:1px solid var(--line);padding:20px;margin:18px 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.editor input,.editor textarea,.editor select{width:100%;padding:12px;border:1px solid var(--line);font:14px Georgia;background:#fbf8f2}
+.editor input,.editor textarea,.editor select{width:100%;padding:12px;border:1px solid var(--line);font:14px Georgia;background:#fbf8f2;box-sizing:border-box}
 .editor textarea{min-height:80px}
 .editor label{font:11px Arial;letter-spacing:1px;text-transform:uppercase}
-.editor .wide{grid-column:1/-1}
+.wide{grid-column:1/-1}
 .editor-actions{display:flex;gap:10px;flex-wrap:wrap}
-.editor-actions button{padding:12px 18px;cursor:pointer}
-.small-btn{padding:8px 12px;margin:3px;cursor:pointer}
+.editor-actions button,.small-btn{padding:10px 14px;cursor:pointer}
 .status{color:var(--wine);font:13px Arial}
 .admin-table-wrap{overflow-x:auto}
+.product-preview img{max-width:140px;max-height:140px;object-fit:contain}
 @media(max-width:650px){
 .editor{grid-template-columns:1fr}
-.editor .wide{grid-column:auto}
-.admin-table{min-width:650px}
+.wide{grid-column:auto}
+.admin-table{min-width:850px}
 }
 </style>
 </head>
@@ -70,7 +69,8 @@
 
 <section id="products" class="admin-section">
 <h2>Editar tienda</h2>
-<p>Añade, modifica o elimina productos. Las fotos se suben desde tu galería.</p>
+<p>Aquí puedes editar los productos actuales o añadir otros.</p>
+<p>Tallas y colores se escriben separados por comas.</p>
 
 <form id="productForm" class="editor">
 <input type="hidden" id="productId">
@@ -93,19 +93,27 @@
 <input id="pPrice" type="number" min="0" step="0.01" required>
 </label>
 
-<label>Stock
+<label>Stock total
 <input id="pStock" type="number" min="0" step="1" value="0" required>
+</label>
+
+<label>Tallas (separadas por coma)
+<input id="pSizes" placeholder="XS, S, M, L">
+</label>
+
+<label>Colores (separados por coma)
+<input id="pColors" placeholder="Blanco, Celeste">
 </label>
 
 <label class="wide">Descripción
 <textarea id="pDescription"></textarea>
 </label>
 
-<label class="wide">Foto (selecciona desde tu galería)
+<label class="wide">Foto desde tu galería
 <input id="pImage" type="file" accept="image/*">
 </label>
 
-<div id="imagePreview" class="wide"></div>
+<div id="imagePreview" class="wide product-preview"></div>
 
 <label>
 <input id="pActive" type="checkbox" checked style="width:auto">
@@ -127,10 +135,8 @@ Mostrar en la tienda
 <h2>Ventas</h2>
 <div id="statsContent">Cargando...</div>
 </section>
-
 </div>
 </div>
-
 <script>
 const SUPABASE_URL="https://inrqvnddcjaarjrwqbei.supabase.co";
 const SUPABASE_KEY="sb_publishable_OuYXRM31Ih71RVCswfTOsw_S9zXTXMU";
@@ -154,7 +160,9 @@ return String(s??"").replace(/[&<>"']/g,c=>({
 }
 
 function showSection(id){
-document.querySelectorAll(".admin-section").forEach(s=>s.classList.remove("active"));
+document.querySelectorAll(".admin-section")
+.forEach(s=>s.classList.remove("active"));
+
 document.getElementById(id).classList.add("active");
 }
 
@@ -162,7 +170,7 @@ async function checkAdmin(){
 const {data:{user},error:authError}=await sb.auth.getUser();
 
 if(authError){
-message.textContent="Error: "+authError.message;
+message.textContent=authError.message;
 return;
 }
 
@@ -215,6 +223,7 @@ document.getElementById("logoutBtn").onclick=async()=>{
 await sb.auth.signOut();
 location.reload();
 };
+
 async function loadOrders(){
 const {data,error}=await sb.from("orders")
 .select("*")
@@ -247,6 +256,10 @@ data.map(o=>
 '</table></div>';
 }
 
+function listVal(v){
+return Array.isArray(v)?v.join(", "):(v||"");
+}
+
 async function loadProducts(){
 const {data,error}=await sb.from("products")
 .select("*")
@@ -255,24 +268,25 @@ const {data,error}=await sb.from("products")
 const el=document.getElementById("productsContent");
 
 if(error){
-el.textContent=error.message;
+el.textContent="Error cargando productos: "+error.message;
 return;
 }
 
 if(!data?.length){
-el.innerHTML="Aún no hay productos. Añade el primero arriba.";
+el.innerHTML="No hay productos en Supabase todavía.";
 return;
 }
 
 el.innerHTML=
 '<div class="admin-table-wrap"><table class="admin-table">'+
-'<tr><th>Foto</th><th>Producto</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>En tienda</th><th>Acciones</th></tr>'+
+'<tr><th>Foto</th><th>Producto</th><th>Precio</th><th>Tallas</th><th>Colores</th><th>Stock</th><th>Visible</th><th>Acciones</th></tr>'+
 data.map(p=>
 '<tr>'+
-'<td><img src="'+esc(p.image_url||"")+'" alt=""></td>'+
+'<td><img src="'+esc(p.image_url||"")+'"></td>'+
 '<td>'+esc(p.name)+'</td>'+
-'<td>'+esc(p.category||"")+'</td>'+
 '<td>$'+Number(p.price||0).toFixed(2)+'</td>'+
+'<td>'+esc(listVal(p.sizes))+'</td>'+
+'<td>'+esc(listVal(p.colors))+'</td>'+
 '<td>'+Number(p.stock||0)+'</td>'+
 '<td>'+(p.active?"Sí":"No")+'</td>'+
 '<td>'+
@@ -300,6 +314,8 @@ document.getElementById("pName").value=data.name||"";
 document.getElementById("pCategory").value=data.category||"Otros";
 document.getElementById("pPrice").value=data.price||0;
 document.getElementById("pStock").value=data.stock||0;
+document.getElementById("pSizes").value=listVal(data.sizes);
+document.getElementById("pColors").value=listVal(data.colors);
 document.getElementById("pDescription").value=data.description||"";
 document.getElementById("pActive").checked=data.active!==false;
 
@@ -307,10 +323,11 @@ currentImageUrl=data.image_url||"";
 
 document.getElementById("imagePreview").innerHTML=
 currentImageUrl
-? '<img src="'+esc(currentImageUrl)+'" style="max-width:140px;max-height:140px;object-fit:contain">'
-: '';
+? '<img src="'+esc(currentImageUrl)+'">'
+: "";
 
-document.getElementById("productMessage").textContent="Editando: "+data.name;
+document.getElementById("productMessage").textContent=
+"Editando: "+data.name;
 
 window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -345,9 +362,13 @@ const f=e.target.files[0];
 if(f){
 document.getElementById("imagePreview").innerHTML=
 '<p>Imagen seleccionada: '+esc(f.name)+'</p>'+
-'<img src="'+URL.createObjectURL(f)+'" style="max-width:140px;max-height:140px;object-fit:contain">';
+'<img src="'+URL.createObjectURL(f)+'">';
 }
 };
+function commaArray(v){
+return v.split(",").map(x=>x.trim()).filter(Boolean);
+}
+
 document.getElementById("productForm").onsubmit=async e=>{
 e.preventDefault();
 
@@ -374,11 +395,9 @@ contentType:file.type
 
 if(upErr)throw upErr;
 
-const {data:urlData}=sb.storage
+imageUrl=sb.storage
 .from("product-images")
-.getPublicUrl(path);
-
-imageUrl=urlData.publicUrl;
+.getPublicUrl(path).data.publicUrl;
 }
 
 const record={
@@ -386,6 +405,8 @@ name:document.getElementById("pName").value.trim(),
 category:document.getElementById("pCategory").value,
 price:Number(document.getElementById("pPrice").value),
 stock:Number(document.getElementById("pStock").value),
+sizes:commaArray(document.getElementById("pSizes").value),
+colors:commaArray(document.getElementById("pColors").value),
 description:document.getElementById("pDescription").value.trim(),
 image_url:imageUrl,
 active:document.getElementById("pActive").checked
@@ -399,7 +420,7 @@ const result=id
 
 if(result.error)throw result.error;
 
-msg.textContent="¡Producto guardado!";
+msg.textContent="Producto guardado correctamente.";
 
 resetProductForm();
 loadProducts();
@@ -432,6 +453,5 @@ el.innerHTML=
 
 checkAdmin();
 </script>
-
 </body>
 </html>
