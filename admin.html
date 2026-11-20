@@ -2,42 +2,55 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Prescott Club — Administración</title>
 <link rel="stylesheet" href="styles.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
-.admin-wrap{max-width:1100px;margin:auto;padding:35px 20px}
-.admin-box{max-width:420px;margin:70px auto;padding:35px;background:#f7f2e9;color:#3d2925}
+.admin-wrap{max-width:1200px;margin:auto;padding:24px 16px}
+.admin-box{max-width:420px;margin:55px auto;padding:30px;background:#f7f2e9;color:#3d2925}
 .admin-box input,.admin-box button{width:100%;padding:13px;margin:8px 0;box-sizing:border-box}
 .admin-dashboard{display:none}
 .admin-nav{display:flex;gap:10px;flex-wrap:wrap;margin:25px 0}
 .admin-nav button{padding:12px 20px;cursor:pointer}
 .admin-section{display:none}
 .admin-section.active{display:block}
-.admin-table{width:100%;border-collapse:collapse;overflow:auto}
-.admin-table th,.admin-table td{padding:12px;border-bottom:1px solid #ddd;text-align:left}
+.admin-table{width:100%;border-collapse:collapse}
+.admin-table th,.admin-table td{padding:10px;border-bottom:1px solid #ddd;text-align:left}
+.admin-table img{width:65px;height:65px;object-fit:contain;background:#eee}
+.editor{background:#fff;border:1px solid var(--line);padding:20px;margin:18px 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.editor input,.editor textarea,.editor select{width:100%;padding:12px;border:1px solid var(--line);font:14px Georgia;background:#fbf8f2}
+.editor textarea{min-height:80px}
+.editor label{font:11px Arial;letter-spacing:1px;text-transform:uppercase}
+.editor .wide{grid-column:1/-1}
+.editor-actions{display:flex;gap:10px;flex-wrap:wrap}
+.editor-actions button{padding:12px 18px;cursor:pointer}
+.small-btn{padding:8px 12px;margin:3px;cursor:pointer}
+.status{color:var(--wine);font:13px Arial}
+.admin-table-wrap{overflow-x:auto}
+@media(max-width:650px){
+.editor{grid-template-columns:1fr}
+.editor .wide{grid-column:auto}
+.admin-table{min-width:650px}
+}
 </style>
 </head>
 
 <body class="admin-page">
-
 <div class="admin-wrap">
 
 <div id="login" class="admin-box">
 <p>PRESCOTT CLUB</p>
 <h1>Administración</h1>
-
 <input id="email" type="email" placeholder="Correo electrónico">
 <input id="password" type="password" placeholder="Contraseña">
-
 <button id="loginBtn">Iniciar sesión</button>
 <p id="message"></p>
 <a href="index.html">Volver a la tienda</a>
 </div>
 
 <div id="dashboard" class="admin-dashboard">
-
 <header>
 <h1>Prescott Club</h1>
 <p>Panel de administración</p>
@@ -46,17 +59,67 @@
 
 <nav class="admin-nav">
 <button onclick="showSection('orders')">Pedidos</button>
-<button onclick="showSection('products')">Productos</button>
+<button onclick="showSection('products')">Productos / Tienda</button>
 <button onclick="showSection('stats')">Ventas</button>
 </nav>
 
 <section id="orders" class="admin-section active">
 <h2>Pedidos</h2>
-<div id="ordersContent">Cargando pedidos...</div>
+<div id="ordersContent">Cargando...</div>
 </section>
 
 <section id="products" class="admin-section">
-<h2>Productos</h2>
+<h2>Editar tienda</h2>
+<p>Añade, modifica o elimina productos. Las fotos se suben desde tu galería.</p>
+
+<form id="productForm" class="editor">
+<input type="hidden" id="productId">
+
+<label>Nombre
+<input id="pName" required>
+</label>
+
+<label>Categoría
+<select id="pCategory">
+<option>Camisas</option>
+<option>Camisetas</option>
+<option>Pantalones</option>
+<option>Accesorios</option>
+<option>Otros</option>
+</select>
+</label>
+
+<label>Precio (USD)
+<input id="pPrice" type="number" min="0" step="0.01" required>
+</label>
+
+<label>Stock
+<input id="pStock" type="number" min="0" step="1" value="0" required>
+</label>
+
+<label class="wide">Descripción
+<textarea id="pDescription"></textarea>
+</label>
+
+<label class="wide">Foto (selecciona desde tu galería)
+<input id="pImage" type="file" accept="image/*">
+</label>
+
+<div id="imagePreview" class="wide"></div>
+
+<label>
+<input id="pActive" type="checkbox" checked style="width:auto">
+Mostrar en la tienda
+</label>
+
+<div class="editor-actions wide">
+<button class="button" type="submit" id="saveProduct">Guardar producto</button>
+<button type="button" onclick="resetProductForm()">Cancelar / Nuevo</button>
+</div>
+
+<p id="productMessage" class="status wide"></p>
+</form>
+
 <div id="productsContent">Cargando productos...</div>
 </section>
 
@@ -69,157 +132,302 @@
 </div>
 
 <script>
-const SUPABASE_URL = "https://inrqvnddcjaarjrwqbei.supabase.co";
-const SUPABASE_KEY = "sb_publishable_OuYXRM31Ih71RVCswfTOsw_S9zXTXMU";
+const SUPABASE_URL="https://inrqvnddcjaarjrwqbei.supabase.co";
+const SUPABASE_KEY="sb_publishable_OuYXRM31Ih71RVCswfTOsw_S9zXTXMU";
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-const loginBox = document.getElementById("login");
-const dashboard = document.getElementById("dashboard");
-const message = document.getElementById("message");
+const loginBox=document.getElementById("login");
+const dashboard=document.getElementById("dashboard");
+const message=document.getElementById("message");
 
-function showSection(id) {
-  document.querySelectorAll(".admin-section").forEach(s => s.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
+let currentImageUrl="";
+
+function esc(s){
+return String(s??"").replace(/[&<>"']/g,c=>({
+"&":"&amp;",
+"<":"&lt;",
+">":"&gt;",
+'"':"&quot;",
+"'":"&#39;"
+}[c]));
 }
 
-async function checkAdmin() {
-  const { data: { user }, error: authError } = await sb.auth.getUser();
-
-  if (authError) {
-    message.textContent = "Error de sesión: " + authError.message;
-    return;
-  }
-
-  if (!user) {
-    message.textContent = "No hay sesión iniciada.";
-    return;
-  }
-
-  const { data, error } = await sb
-    .from("admin_users")
-    .select("user_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (error) {
-    message.textContent = "Error verificando administrador: " + error.message;
-    return;
-  }
-
-  if (!data) {
-    message.textContent = "La cuenta no aparece como administradora.";
-    return;
-  }
-
-  loginBox.style.display = "none";
-  dashboard.style.display = "block";
-
-  loadOrders();
-  loadProducts();
-  loadStats();
+function showSection(id){
+document.querySelectorAll(".admin-section").forEach(s=>s.classList.remove("active"));
+document.getElementById(id).classList.add("active");
 }
 
-document.getElementById("loginBtn").onclick = async () => {
-  message.textContent = "Iniciando sesión...";
+async function checkAdmin(){
+const {data:{user},error:authError}=await sb.auth.getUser();
 
-  const { error } = await sb.auth.signInWithPassword({
-    email: document.getElementById("email").value,
-    password: document.getElementById("password").value
-  });
+if(authError){
+message.textContent="Error: "+authError.message;
+return;
+}
 
-  if (error) {
-    message.textContent = "Correo o contraseña incorrectos.";
-    return;
-  }
+if(!user){
+message.textContent="No hay sesión iniciada.";
+return;
+}
 
-  checkAdmin();
+const {data,error}=await sb.from("admin_users")
+.select("user_id")
+.eq("user_id",user.id)
+.maybeSingle();
+
+if(error){
+message.textContent="Error verificando administrador: "+error.message;
+return;
+}
+
+if(!data){
+message.textContent="Esta cuenta no es administradora.";
+await sb.auth.signOut();
+return;
+}
+
+loginBox.style.display="none";
+dashboard.style.display="block";
+
+loadOrders();
+loadProducts();
+loadStats();
+}
+
+document.getElementById("loginBtn").onclick=async()=>{
+message.textContent="Iniciando sesión...";
+
+const {error}=await sb.auth.signInWithPassword({
+email:document.getElementById("email").value,
+password:document.getElementById("password").value
+});
+
+if(error){
+message.textContent="Correo o contraseña incorrectos.";
+return;
+}
+
+checkAdmin();
 };
 
-document.getElementById("logoutBtn").onclick = async () => {
-  await sb.auth.signOut();
-  location.reload();
+document.getElementById("logoutBtn").onclick=async()=>{
+await sb.auth.signOut();
+location.reload();
+};
+async function loadOrders(){
+const {data,error}=await sb.from("orders")
+.select("*")
+.order("created_at",{ascending:false});
+
+const el=document.getElementById("ordersContent");
+
+if(error){
+el.textContent=error.message;
+return;
+}
+
+if(!data?.length){
+el.textContent="Todavía no hay pedidos.";
+return;
+}
+
+el.innerHTML=
+'<div class="admin-table-wrap"><table class="admin-table">'+
+'<tr><th>Cliente</th><th>Teléfono</th><th>Total</th><th>Estado</th><th>Fecha</th></tr>'+
+data.map(o=>
+'<tr>'+
+'<td>'+esc(o.customer_name)+'</td>'+
+'<td>'+esc(o.phone)+'</td>'+
+'<td>$'+Number(o.total||0).toFixed(2)+'</td>'+
+'<td>'+esc(o.status||"Pendiente")+'</td>'+
+'<td>'+new Date(o.created_at).toLocaleDateString()+'</td>'+
+'</tr>'
+).join("")+
+'</table></div>';
+}
+
+async function loadProducts(){
+const {data,error}=await sb.from("products")
+.select("*")
+.order("created_at",{ascending:false});
+
+const el=document.getElementById("productsContent");
+
+if(error){
+el.textContent=error.message;
+return;
+}
+
+if(!data?.length){
+el.innerHTML="Aún no hay productos. Añade el primero arriba.";
+return;
+}
+
+el.innerHTML=
+'<div class="admin-table-wrap"><table class="admin-table">'+
+'<tr><th>Foto</th><th>Producto</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>En tienda</th><th>Acciones</th></tr>'+
+data.map(p=>
+'<tr>'+
+'<td><img src="'+esc(p.image_url||"")+'" alt=""></td>'+
+'<td>'+esc(p.name)+'</td>'+
+'<td>'+esc(p.category||"")+'</td>'+
+'<td>$'+Number(p.price||0).toFixed(2)+'</td>'+
+'<td>'+Number(p.stock||0)+'</td>'+
+'<td>'+(p.active?"Sí":"No")+'</td>'+
+'<td>'+
+'<button class="small-btn" onclick="editProduct(\''+p.id+'\')">Editar</button>'+
+'<button class="small-btn" onclick="deleteProduct(\''+p.id+'\')">Eliminar</button>'+
+'</td>'+
+'</tr>'
+).join("")+
+'</table></div>';
+}
+
+async function editProduct(id){
+const {data,error}=await sb.from("products")
+.select("*")
+.eq("id",id)
+.single();
+
+if(error){
+alert(error.message);
+return;
+}
+
+document.getElementById("productId").value=data.id;
+document.getElementById("pName").value=data.name||"";
+document.getElementById("pCategory").value=data.category||"Otros";
+document.getElementById("pPrice").value=data.price||0;
+document.getElementById("pStock").value=data.stock||0;
+document.getElementById("pDescription").value=data.description||"";
+document.getElementById("pActive").checked=data.active!==false;
+
+currentImageUrl=data.image_url||"";
+
+document.getElementById("imagePreview").innerHTML=
+currentImageUrl
+? '<img src="'+esc(currentImageUrl)+'" style="max-width:140px;max-height:140px;object-fit:contain">'
+: '';
+
+document.getElementById("productMessage").textContent="Editando: "+data.name;
+
+window.scrollTo({top:0,behavior:"smooth"});
+}
+
+async function deleteProduct(id){
+if(!confirm("¿Eliminar este producto?"))return;
+
+const {error}=await sb.from("products")
+.delete()
+.eq("id",id);
+
+if(error){
+alert("No se pudo eliminar: "+error.message);
+return;
+}
+
+loadProducts();
+}
+
+function resetProductForm(){
+document.getElementById("productForm").reset();
+document.getElementById("productId").value="";
+document.getElementById("pActive").checked=true;
+currentImageUrl="";
+document.getElementById("imagePreview").innerHTML="";
+document.getElementById("productMessage").textContent="";
+}
+
+document.getElementById("pImage").onchange=e=>{
+const f=e.target.files[0];
+
+if(f){
+document.getElementById("imagePreview").innerHTML=
+'<p>Imagen seleccionada: '+esc(f.name)+'</p>'+
+'<img src="'+URL.createObjectURL(f)+'" style="max-width:140px;max-height:140px;object-fit:contain">';
+}
+};
+document.getElementById("productForm").onsubmit=async e=>{
+e.preventDefault();
+
+const msg=document.getElementById("productMessage");
+const btn=document.getElementById("saveProduct");
+
+btn.disabled=true;
+msg.textContent="Guardando...";
+
+try{
+let imageUrl=currentImageUrl;
+const file=document.getElementById("pImage").files[0];
+
+if(file){
+const ext=(file.name.split(".").pop()||"jpg").toLowerCase();
+const path=Date.now()+"-"+Math.random().toString(36).slice(2)+"."+ext;
+
+const {error:upErr}=await sb.storage
+.from("product-images")
+.upload(path,file,{
+upsert:false,
+contentType:file.type
+});
+
+if(upErr)throw upErr;
+
+const {data:urlData}=sb.storage
+.from("product-images")
+.getPublicUrl(path);
+
+imageUrl=urlData.publicUrl;
+}
+
+const record={
+name:document.getElementById("pName").value.trim(),
+category:document.getElementById("pCategory").value,
+price:Number(document.getElementById("pPrice").value),
+stock:Number(document.getElementById("pStock").value),
+description:document.getElementById("pDescription").value.trim(),
+image_url:imageUrl,
+active:document.getElementById("pActive").checked
 };
 
-async function loadOrders() {
-  const { data, error } = await sb
-    .from("orders")
-    .select("*")
-    .order("created_at", { ascending: false });
+const id=document.getElementById("productId").value;
 
-  if (error) {
-    document.getElementById("ordersContent").textContent = error.message;
-    return;
-  }
+const result=id
+? await sb.from("products").update(record).eq("id",id)
+: await sb.from("products").insert(record);
 
-  if (!data.length) {
-    document.getElementById("ordersContent").innerHTML = "Todavía no hay pedidos.";
-    return;
-  }
+if(result.error)throw result.error;
 
-  document.getElementById("ordersContent").innerHTML = `
-    <table class="admin-table">
-      <tr>
-        <th>Cliente</th>
-        <th>Teléfono</th>
-        <th>Total</th>
-        <th>Estado</th>
-        <th>Fecha</th>
-      </tr>
-      ${data.map(o => `
-        <tr>
-          <td>${o.customer_name || ""}</td>
-          <td>${o.phone || ""}</td>
-          <td>$${Number(o.total || 0).toFixed(2)}</td>
-          <td>${o.status || "Pendiente"}</td>
-          <td>${new Date(o.created_at).toLocaleDateString()}</td>
-        </tr>
-      `).join("")}
-    </table>`;
+msg.textContent="¡Producto guardado!";
+
+resetProductForm();
+loadProducts();
+
+}catch(err){
+msg.textContent="Error: "+(err.message||err);
+}finally{
+btn.disabled=false;
+}
+};
+
+async function loadStats(){
+const {data,error}=await sb.from("orders").select("total");
+
+const el=document.getElementById("statsContent");
+
+if(error){
+el.textContent=error.message;
+return;
 }
 
-async function loadProducts() {
-  const { data, error } = await sb
-    .from("products")
-    .select("*")
-    .order("created_at", { ascending: false });
+const total=(data||[]).reduce(
+(s,o)=>s+Number(o.total||0),0
+);
 
-  if (error) {
-    document.getElementById("productsContent").textContent = error.message;
-    return;
-  }
-
-  document.getElementById("productsContent").innerHTML =
-    data.length ? `
-    <table class="admin-table">
-      <tr><th>Producto</th><th>Precio</th><th>Stock</th><th>Activo</th></tr>
-      ${data.map(p => `
-        <tr>
-          <td>${p.name}</td>
-          <td>$${Number(p.price).toFixed(2)}</td>
-          <td>${p.stock}</td>
-          <td>${p.active ? "Sí" : "No"}</td>
-        </tr>
-      `).join("")}
-    </table>` : "Todavía no hay productos registrados en la base de datos.";
-}
-
-async function loadStats() {
-  const { data, error } = await sb
-    .from("orders")
-    .select("total");
-
-  if (error) {
-    document.getElementById("statsContent").textContent = error.message;
-    return;
-  }
-
-  const total = data.reduce((sum, o) => sum + Number(o.total || 0), 0);
-
-  document.getElementById("statsContent").innerHTML = `
-    <h3>Total de pedidos: ${data.length}</h3>
-    <h2>Ventas registradas: $${total.toFixed(2)}</h2>
-  `;
+el.innerHTML=
+'<h3>Total pedidos: '+(data||[]).length+'</h3>'+
+'<h2>Ventas registradas: $'+total.toFixed(2)+'</h2>';
 }
 
 checkAdmin();
