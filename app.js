@@ -233,62 +233,97 @@ function addToCart(product, color, size) {
 
 function renderCart() {
   const wrap = document.getElementById("cart-items");
+  const totalEl = document.getElementById("cart-total");
+
   if (!wrap) return;
 
-  const cart = readCart();
+  let cart = readCart();
 
   if (!cart.length) {
     wrap.innerHTML = `
-      <p class="empty">
-        Tu bolsa está vacía.
+      <div class="empty">
+        <p>Tu bolsa está vacía.</p>
         <a class="text-link" href="tienda.html">Explorar tienda ↗</a>
-      </p>
+      </div>
     `;
-    document.getElementById("cart-total").textContent = money(0);
+
+    if (totalEl) totalEl.textContent = money(0);
+    updateCount();
     return;
   }
 
-  wrap.innerHTML = cart.map((x, i) => `
-    <div class="cart-row">
-      <div>
-        <h3>${esc(x.product)}</h3>
-        <p>${esc(x.color)} · Talla ${esc(x.size)}</p>
-        <p>${money(x.price)} c/u</p>
+  wrap.innerHTML = `
+    ${cart.map((x, i) => `
+      <div class="cart-row">
+        <div class="cart-product">
+          <h3>${esc(x.product || "Producto")}</h3>
+          <p>Color: ${esc(x.color || "Único")}</p>
+          <p>Talla: ${esc(x.size || "Única")}</p>
+          <p>Precio: ${money(x.price || 0)}</p>
+        </div>
+
+        <div class="qty-controls">
+          <button type="button" data-action="minus" data-i="${i}">−</button>
+          <span>${Number(x.qty) || 1}</span>
+          <button type="button" data-action="plus" data-i="${i}">+</button>
+
+          <p><strong>${money((Number(x.price) || 0) * (Number(x.qty) || 1))}</strong></p>
+
+          <button type="button" data-action="remove" data-i="${i}">
+            Eliminar
+          </button>
+        </div>
       </div>
+    `).join("")}
 
-      <div class="qty-controls">
-        <button data-action="minus" data-i="${i}">−</button>
-        ${x.qty}
-        <button data-action="plus" data-i="${i}">+</button>
+    <button type="button" id="clear-cart" class="button">
+      Vaciar carrito
+    </button>
+  `;
 
-        <p><strong>${money(x.price * x.qty)}</strong></p>
-
-        <button data-action="remove" data-i="${i}">Eliminar</button>
-      </div>
-    </div>
-  `).join("");
-
-  document.getElementById("cart-total").textContent = money(
-    cart.reduce((s, x) => s + x.price * x.qty, 0)
+  const total = cart.reduce(
+    (sum, x) => sum + (Number(x.price) || 0) * (Number(x.qty) || 1),
+    0
   );
 
-  wrap.querySelectorAll("button").forEach(button => {
+  if (totalEl) totalEl.textContent = money(total);
+
+  wrap.querySelectorAll("[data-action]").forEach(button => {
     button.addEventListener("click", () => {
-      const cart = readCart();
-      const i = Number(button.dataset.i);
+      const index = Number(button.dataset.i);
       const action = button.dataset.action;
+      const currentCart = readCart();
 
-      if (action === "plus") cart[i].qty++;
-      if (action === "minus") cart[i].qty--;
+      if (!currentCart[index]) return;
 
-      if (action === "remove" || cart[i].qty <= 0) {
-        cart.splice(i, 1);
+      if (action === "plus") {
+        currentCart[index].qty++;
       }
 
-      saveCart(cart);
+      if (action === "minus") {
+        currentCart[index].qty--;
+
+        if (currentCart[index].qty <= 0) {
+          currentCart.splice(index, 1);
+        }
+      }
+
+      if (action === "remove") {
+        currentCart.splice(index, 1);
+      }
+
+      saveCart(currentCart);
       renderCart();
     });
   });
+
+  document.getElementById("clear-cart")?.addEventListener("click", () => {
+    localStorage.removeItem(CART_KEY);
+    saveCart([]);
+    renderCart();
+  });
+
+  updateCount();
 }
 
 /* ENVIAR PEDIDO A SUPABASE */
